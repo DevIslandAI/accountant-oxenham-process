@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Oudit · Contrôles et audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: vertical flowchart on a dotted canvas, a tool legend above, a document shelf below */
+:root {
+  --bg: #ffffff; --soft: #f5f7fb; --surface: #ffffff; --fg: #18202c; --muted: #5a6577; --line: #d7dde8;
+  --accent: #1f5fd1; --accent-soft: #e6eefc; --claude: #c2571a; --claude-soft: #fbeee5;
+  --final: #1c7c43; --final-soft: #e5f4ea; --todo: #a35a00; --todo-soft: #fff3e0;
+  color-scheme: light;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15.5px; line-height: 1.55; }
+body:not([data-lang="en"]) .en, body[data-lang="en"] .fr { display: none; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 0 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.25; text-wrap: balance; margin: 0; }
+/* Header: translucent bar with process tabs, then a quiet title block */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(255, 255, 255, .78);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); transition: box-shadow .25s ease; }
+.bar.scrolled { box-shadow: 0 1px 0 var(--line), 0 8px 18px -14px rgba(16, 24, 40, .35); }
+.bar-in { max-width: 980px; margin: 0 auto; padding-block: 10px; display: flex; align-items: center; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: -0.005em; white-space: nowrap; }
+.brand .dim { color: var(--muted); font-weight: 500; }
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--soft); border-radius: 10px; margin-inline: auto; min-width: 0; }
+.tabs a, .tabs .cur { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 500;
+  color: var(--muted); text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
+.tabs a:hover { color: var(--fg); }
+.tabs a:active { transform: scale(.97); }
+.tabs .cur { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 24, 40, .1), 0 0 0 .5px rgba(16, 24, 40, .08); }
+.tabs .tn { font-variant-numeric: tabular-nums; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  background: var(--line); color: var(--muted); }
+.tabs .cur .tn { background: var(--accent); color: #ffffff; }
+.tools { display: flex; align-items: center; gap: 4px; }
+.seg { display: inline-flex; padding: 2px; background: var(--soft); border-radius: 8px; }
+.seg button { font: inherit; font-size: 12.5px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 4px 9px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+.icon-btn { font: inherit; font-size: 13.5px; font-weight: 500; border: 0; background: none; color: var(--accent); padding: 6px 10px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: background .15s; }
+.icon-btn:hover { background: var(--soft); }
+.icon-btn:active, .seg button:active { transform: scale(.97); transition: transform .1s ease-out; }
+.icon-btn svg { width: 14px; height: 14px; }
+.icon-btn[aria-pressed="true"] { color: var(--claude); background: var(--claude-soft); }
+button:focus-visible, .node:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hero { padding-top: 44px; }
+.kicker { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.08; letter-spacing: -0.022em; font-weight: 700; margin-top: 10px; max-width: 20ch; }
+.lede { color: var(--muted); margin: 14px 0 0; max-width: 60ch; font-size: 17px; line-height: 1.5; }
+.facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 28px 0 0; }
+.facts div { min-width: 0; }
+.facts dt { font-size: 12.5px; color: var(--muted); }
+.facts dd { margin: 2px 0 0; font-family: var(--display); font-size: 28px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tools-used { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.tools-used .tu-label { font-weight: 600; color: var(--fg); }
+.tool { display: inline-flex; align-items: center; gap: 7px; }
+.tool svg { width: 20px; height: 20px; display: block; }
+@media (max-width: 760px) {
+  .bar-in { flex-wrap: wrap; row-gap: 8px; }
+  .tabs { order: 3; width: 100%; margin-inline: 0; }
+  .tabs a, .tabs .cur { flex: 1; justify-content: center; padding-inline: 8px; }
+  .tools { margin-left: auto; }
+}
+@media (max-width: 520px) {
+  .icon-btn .lbl { display: none; }
+  /* process tabs and view switch: equal columns whose labels wrap, so nothing runs off the screen */
+  .tabs a, .tabs .cur { flex: 1 1 0; min-width: 0; font-size: 12px; white-space: normal; text-align: center; line-height: 1.2; gap: 5px; padding: 6px 5px; }
+  .tabs .tn { flex: none; }
+}
+@media (prefers-reduced-transparency: reduce) { .bar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Flow */
+.flow { display: flex; flex-direction: column; align-items: center; margin-top: 40px; }
+.pill { font-family: var(--display); font-weight: 600; font-size: 14px; padding: 8px 22px; border-radius: 999px; }
+.pill.start { background: var(--accent); color: #ffffff; }
+.pill.end { background: var(--final-soft); color: var(--final); border: 1.5px solid var(--final); }
+.arrow { display: flex; flex-direction: column; align-items: center; color: var(--line); height: 46px; }
+.arrow .shaft { width: 3px; flex: 1; border-radius: 3px;
+  background: repeating-linear-gradient(to bottom, var(--accent) 0 6px, transparent 6px 12px); background-size: 3px 12px;
+  animation: flow 0.9s linear infinite; opacity: .35; }
+.arrow svg { width: 16px; height: 10px; color: var(--accent); opacity: .5; }
+.arrow.lit .shaft { opacity: 1; } .arrow.lit svg { opacity: 1; }
+@keyframes flow { from { background-position: 0 0; } to { background-position: 0 12px; } }
+.node { position: relative; width: min(680px, 100%); background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 16px 18px;
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+.node.is-check { border-style: dashed; }
+.node.active { border-color: var(--accent); transform: translateY(-2px) scale(1.012); box-shadow: 0 10px 28px -12px var(--accent); }
+.nhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.num { font-family: var(--display); font-weight: 700; font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); flex: none; }
+.node.active .num { background: var(--accent); color: #ffffff; }
+.icons { display: flex; gap: 6px; }
+.ico svg { width: 34px; height: 34px; display: block; }
+.actor { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.a-colleague { background: var(--todo-soft); color: var(--todo); }
+.a-partner { background: var(--final-soft); color: var(--final); }
+.a-system, .a-external { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+.claude { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--claude); background: var(--claude-soft); padding: 3px 10px; border-radius: 999px; }
+.claude svg { width: 13px; height: 13px; }
+.node h3 { font-size: 17.5px; margin: 12px 0 4px; }
+.desc { margin: 0; color: var(--fg); max-width: 64ch; }
+.ex { margin: 8px 0 0; font-size: 14px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+.todo { margin: 8px 0 0; font-size: 13.5px; color: var(--todo); background: var(--todo-soft); padding: 6px 10px; border-radius: 8px; }
+.docs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.doc { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; text-decoration: none; color: var(--fg); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px 5px 6px; font-size: 13.5px; font-weight: 500; transition: border-color .2s, transform .2s; }
+.doc:hover { border-color: var(--accent); transform: translateY(-1px); }
+.doc .dicon svg { width: 22px; height: 22px; display: block; }
+.doc .dname { overflow-wrap: anywhere; }
+.doc > svg { width: 12px; height: 12px; color: var(--muted); flex: none; }
+.doc.final { border-color: var(--final); background: var(--final-soft); }
+.flag { font-size: 11px; font-weight: 700; color: var(--final); text-transform: uppercase; letter-spacing: .06em; }
+.split { width: min(520px, 80%); height: 3px; position: relative; }
+.split span { position: absolute; inset: 0; border-top: 3px dashed var(--accent); opacity: .45; }
+.branches { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: min(900px, 100%); }
+.branch { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.branch .node { width: 100%; }
+.side { margin-top: 26px; width: min(680px, 100%); }
+.note { width: min(680px, 100%); margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 14.5px; }
+.note b { font-family: var(--display); }
+.qlist { margin: 10px 0 0; padding-left: 20px; } .qlist li { margin: 6px 0; }
+.qbtn { margin-left: auto; font: inherit; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #f2c48d;
+  background: var(--todo-soft); color: var(--todo); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.qbtn svg { width: 14px; height: 14px; }
+.qbtn:hover { border-color: var(--todo); }
+.qbtn:active { transform: scale(.97); }
+.qbtn[aria-expanded="true"] { background: var(--todo); color: #ffffff; border-color: var(--todo); }
+.qbox { margin-top: 12px; background: var(--todo-soft); border: 1px solid #f2c48d; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.qbox b { color: var(--todo); font-size: 12.5px; }
+.qbox ul { margin: 4px 0 0; padding-left: 18px; } .qbox li { margin: 5px 0; }
+@media (max-width: 720px) { .branches { grid-template-columns: 1fr; } .split { display: none; } }
+
+/* Shelf */
+h2 { font-size: 20px; margin: 48px 0 6px; }
+.shelf-intro { color: var(--muted); margin: 0 0 14px; font-size: 14.5px; }
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.card { display: flex; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; transition: border-color .2s, transform .2s; min-width: 0; }
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card svg { width: 34px; height: 34px; flex: none; }
+.card div { min-width: 0; }
+.card b { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.card span.sub { font-size: 13px; color: var(--muted); }
+.card.final { border-color: var(--final); background: var(--final-soft); }
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .arrow .shaft { animation: none; } .node, .doc, .card { transition: none; } .node.active { transform: none; } }
+
+/* "With Claude" view: same page, the flow is swapped and the accent turns orange */
+[data-view][hidden] { display: none !important; }
+body.mode-claude { --accent: #c2571a; --accent-soft: #fbeee5; }
+.mode-switch { display: inline-flex; flex-wrap: wrap; max-width: 100%; padding: 3px; background: var(--soft); border-radius: 10px; margin-bottom: 18px; }
+.mode-switch button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 7px 16px; border-radius: 8px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.mode-switch button svg { width: 14px; height: 14px; }
+.mode-switch button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(16, 24, 40, .12), 0 0 0 .5px rgba(16, 24, 40, .08); }
+.mode-switch button[data-mode="claude"][aria-pressed="true"], .mode-switch button[data-mode="build"][aria-pressed="true"] { color: var(--claude); }
+.mode-switch button:active { transform: scale(.97); }
+.flowview[data-view="claude"] .node { width: min(760px, 100%); }
+.a-claude { background: var(--claude); color: #ffffff; }
+.uses { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.use { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--claude-soft); color: var(--claude); }
+.manual-tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); color: var(--muted); }
+.node.is-manual { background: var(--soft); }
+.replaces { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.how { margin: 10px 0 0; padding-left: 20px; font-size: 14.5px; }
+.how li { margin: 3px 0; }
+.prompt { margin-top: 12px; border: 1px solid #f0cdb5; background: #fffaf6; border-radius: 10px; overflow: hidden; }
+.prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 6px 5px 12px; border-bottom: 1px solid #f0cdb5;
+  font-size: 12px; font-weight: 700; color: var(--claude); letter-spacing: .02em; }
+.copy { font: inherit; font-size: 12.5px; font-weight: 600; border: 1px solid #f0cdb5; background: #ffffff; color: var(--claude); border-radius: 7px; padding: 3px 10px; cursor: pointer; }
+.copy:hover { background: var(--claude-soft); }
+.copy:active { transform: scale(.97); }
+.pwhy { margin: 0; padding: 9px 12px; font-size: 14px; line-height: 1.5; color: var(--fg); border-bottom: 1px dashed #f0cdb5; background: #ffffff; }
+.prompt pre { margin: 0; padding: 10px 12px; font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 13px; line-height: 1.55;
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg); }
+.result { margin: 10px 0 0; font-size: 14px; color: var(--final); background: var(--final-soft); padding: 6px 10px; border-radius: 8px; }
+.options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.opt { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; min-width: 0; background: var(--surface); }
+.opt b { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 4px; }
+.opt b svg { width: 24px; height: 24px; flex: none; }
+.opt code { display: block; margin-top: 8px; font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 12.5px; background: #fffaf6;
+  border: 1px dashed #f0cdb5; padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 720px) { .options { grid-template-columns: 1fr; } }
+/* phones: the view switch becomes equal columns whose labels wrap (kept last so it wins over the rules above) */
+@media (max-width: 520px) {
+  .mode-switch { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); width: 100%; }
+  .mode-switch button { white-space: normal; justify-content: center; text-align: center; line-height: 1.2; font-size: 12.5px; padding: 7px 6px; gap: 5px; }
+  .mode-switch button svg { flex: none; }
+  .hero { padding-top: 24px; }
+  .facts { gap: 12px 28px; }
+  .prompt pre { font-size: 12.5px; }
+}
+
+/* colour code of a step */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 2px; font-size: 13px; color: var(--fg); }
+.legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.legend .lg i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.18); display: inline-block; }
+</style>
+<header class="bar" id="bar">
+  <div class="bar-in">
+    <span class="brand">Oxenham <span class="dim">· <span class="fr">Comptabilité</span><span class="en">Accounting</span></span></span>
+    <nav class="tabs" aria-label="Processus"><a href="index.html" data-local="index.html"><span class="tn">1</span><span class="fr">Comptes de gestion</span><span class="en">Management accounts</span></a><span class="cur" aria-current="page"><span class="tn">2</span><span class="fr">Contrôles et audit</span><span class="en">Checks and audit</span></span><a href="declaration-tva.html" data-local="declaration-tva.html"><span class="tn">3</span><span class="fr">Déclaration TVA</span><span class="en">VAT return</span></a></nav>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Langue / Language">
+        <button type="button" data-lang-btn="fr" aria-pressed="true">FR</button><button type="button" data-lang-btn="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <section class="hero">
+    <p class="kicker"><span class="fr">Processus 2 sur 3 · Ce que Oudit fait aujourd'hui</span><span class="en">Process 2 of 3 · What Oudit does today</span></p>
+    <h1><span class="fr">Contrôler le bilan avant la clôture et préparer l'audit</span><span class="en">Check the balance sheet before closing and prepare the audit</span></h1>
+    <p class="lede"><span class="fr">Avant chaque clôture, Oudit vérifie que chaque bloc du bilan est juste : l'équipe fait le détail, lui contrôle. En fin d'année, il prépare le dossier de l'auditeur et signe.</span><span class="en">Before every closing, Oudit checks that each block of the balance sheet is right: the team does the detail, he checks it. At year end he prepares the auditor's file and signs.</span></p>
+    <dl class="facts"><div><dt><span class="fr">Étapes</span><span class="en">Steps</span></dt><dd>10</dd></div><div><dt><span class="fr">Intervenants</span><span class="en">People involved</span></dt><dd>3</dd></div><div><dt><span class="fr">Questions ouvertes</span><span class="en">Open questions</span></dt><dd>5</dd></div></dl>
+    <div class="tools-used"><span class="tu-label"><span class="fr">Outils</span><span class="en">Tools</span></span><span class="tool"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg>Pastel / Sage</span><span class="tool"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg>Excel</span></div>
+  </section>
+  <div class="flowview"><div class="flow"><div class="pill start"><span class="fr">Départ</span><span class="en">Start</span></div>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="1" tabindex="0">
+  <div class="nhead"><span class="num">1</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span></div><span class="actor a-colleague"><span class="fr">L'équipe comptable</span><span class="en">The accounting team</span></span></div>
+  <h3><span class="fr">L'équipe passe les écritures</span><span class="en">The team posts the entries</span></h3><p class="desc"><span class="fr">L'équipe comptable saisit les écritures dans Pastel. Chaque matin, Oudit regarde rapidement les écritures de la veille dans Oxenham, SIP et Thirsty Bistro : les montants importants, et ce qui a été mal passé.</span><span class="en">The accounting team posts the entries in Pastel. Every morning, Oudit takes a quick look at the previous day's entries in Oxenham, SIP and Thirsty Bistro: large amounts, and anything posted wrongly.</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="2" tabindex="0">
+  <div class="nhead"><span class="num">2</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Immobilisations : le registre égal aux comptes</span><span class="en">Fixed assets: the register equals the accounts</span></h3><p class="desc"><span class="fr">Le registre des immobilisations (un module de Pastel, tenu par un collègue) doit être égal aux comptes d'immobilisations de la balance. Pour chaque bien, le registre donne le code, la description, la date d'achat, le prix, les amortissements et la valeur nette.</span><span class="en">The fixed asset register (a Pastel module, kept by a colleague) must equal the fixed asset accounts in the trial balance. For each asset, the register gives the code, description, purchase date, price, depreciation and net book value.</span></p><p class="ex"><span class="fr">Exemple : des véhicules achetés en 2015, 2016 et 2017 ont encore une valeur nette ; d'autres sont amortis à 100 % et valent zéro.</span><span class="en">Example: vehicles bought in 2015, 2016 and 2017 still have a net book value; others are 100% depreciated and are worth zero.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Les taux d'amortissement sont maintenant à 10 %. Reste-t-il dans le registre des biens à 4 % ou à 2,5 % ?</span><span class="en">Depreciation rates are now 10%. Are there still assets at 4% or 2.5% in the register?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="3" tabindex="0">
+  <div class="nhead"><span class="num">3</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#8A5A2B"/><path d="M6 17l14-8 14 8v15H6z" fill="#F3E3CC"/><rect x="13" y="20" width="14" height="12" fill="#8A5A2B"/><path d="M13 24h14M13 28h14" stroke="#F3E3CC" stroke-width="1.4"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Stock : vérifier les coûts</span><span class="en">Stock: check the costs</span></h3><p class="desc"><span class="fr">Le stock (vins, bières, spiritueux) est le plus gros poste du bilan. Oudit vérifie le calcul des coûts pour que le stock ne soit ni surévalué ni sous-évalué, car cela change le bénéfice. Les feuilles de stock sont dans le classeur des comptes de gestion (« STOCK », « ST BEER », « ST FABRIQUE », stock sous douane de plus et de moins de 2 ans).</span><span class="en">Stock (wine, beer, spirits) is the biggest item on the balance sheet. Oudit checks the cost calculation so that stock is neither overvalued nor undervalued, because that changes the profit. The stock sheets are in the management accounts workbook ("STOCK", "ST BEER", "ST FABRIQUE", bonded stock over and under 2 years).</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">D'où viennent les coûts que vous vérifiez : de Sylvan (fichier DIEGO), de Dirish (coût des importations), ou directement de Sage ?</span><span class="en">Where do the costs you check come from: Sylvan (the DIEGO file), Dirish (import costs), or straight from Sage?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="4" tabindex="0">
+  <div class="nhead"><span class="num">4</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Clients : MCB Factors et impayés</span><span class="en">Customers: MCB Factors and unpaid debts</span></h3><p class="desc"><span class="fr">Environ 70 % des créances clients d'Oxenham sont vendues à MCB Factors, qui encaisse à la place de l'entreprise. 95 à 99 % du chiffre d'affaires est encaissé. Pour un impayé : d'abord une provision, ensuite la perte est passée en charge.</span><span class="en">About 70% of Oxenham's customer debts are sold to MCB Factors, which collects the money for the company. 95 to 99% of revenue is collected. For an unpaid debt: first a provision, then the loss is written off.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Quel document de MCB Factors utilisez-vous pour vérifier le solde clients : un relevé mensuel, ou autre chose ?</span><span class="en">Which MCB Factors document do you use to check the customer balance: a monthly statement, or something else?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="5" tabindex="0">
+  <div class="nhead"><span class="num">5</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span></div>
+  <h3><span class="fr">Fournisseurs : payés à temps</span><span class="en">Suppliers: paid on time</span></h3><p class="desc"><span class="fr">Les fournisseurs sont payés par chèque signé ou par virement. Chaque paiement doit être enregistré, et les fournisseurs payés à temps.</span><span class="en">Suppliers are paid by signed cheque or bank transfer. Each payment must be recorded, and suppliers paid on time.</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="6" tabindex="0">
+  <div class="nhead"><span class="num">6</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-colleague"><span class="fr">L'équipe comptable</span><span class="en">The accounting team</span></span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Banque : le rapprochement</span><span class="en">Bank: the reconciliation</span></h3><p class="desc"><span class="fr">Un collègue rapproche le livre de banque et le relevé bancaire. Avant de finaliser les comptes, Oudit vérifie que c'est fait.</span><span class="en">A colleague reconciles the cash book with the bank statement. Before finalising the accounts, Oudit checks that it has been done.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Qui fait le rapprochement bancaire, et pour combien de comptes bancaires ?</span><span class="en">Who does the bank reconciliation, and for how many bank accounts?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="7" tabindex="0">
+  <div class="nhead"><span class="num">7</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span></div>
+  <h3><span class="fr">Entre sociétés : le même montant des deux côtés</span><span class="en">Between companies: the same amount on both sides</span></h3><p class="desc"><span class="fr">Ce que SIP doit à Oxenham doit apparaître pour le même montant dans les deux comptabilités. Oudit compare les deux soldes. S'ils sont égaux, il ne va pas dans le détail : Sylvan l'a déjà revu.</span><span class="en">What SIP owes Oxenham must show the same amount in both sets of books. Oudit compares the two balances. If they are equal, he does not go into the detail: Sylvan has already reviewed it.</span></p><div class="legend"><span class="lg"><i style="background:#1E8E3E"></i><span class="fr">même montant</span><span class="en">same amount</span></span><span class="lg"><i style="background:#D93025"></i><span class="fr">écart</span><span class="en">difference</span></span></div><p class="ex"><span class="fr">Exemple d'Oudit : si SIP doit 20 millions à Oxenham, SIP doit montrer 20 millions, pas 15.</span><span class="en">Oudit's example: if SIP owes Oxenham 20 million, SIP must show 20 million, not 15.</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="8" tabindex="0">
+  <div class="nhead"><span class="num">8</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Fin d'année : les annexes pour l'auditeur</span><span class="en">Year end: the schedules for the auditor</span></h3><p class="desc"><span class="fr">L'auditeur veut des comptes définitifs, avec toutes les écritures passées, vérifiées et rapprochées. Oudit sort de Pastel le détail de chaque compte (code, débit, crédit, solde cumulé, libellé) et fournit toutes les annexes. Il passe aussi les écritures d'ajustement de l'audit : ce sont les seules qu'il saisit lui-même.</span><span class="en">The auditor wants final accounts, with every entry posted, checked and reconciled. Oudit runs the detail of each account from Pastel (code, debit, credit, running balance, description) and supplies all the schedules. He also posts the audit adjustments: they are the only entries he makes himself.</span></p><p class="ex"><span class="fr">Exemple : Oudit pense que ces annexes pourraient être faites directement avec l'IA.</span><span class="en">Example: Oudit thinks these schedules could be done straight away with AI.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Combien d'annexes l'auditeur demande-t-il chaque année, et combien de jours y passez-vous ?</span><span class="en">How many schedules does the auditor ask for each year, and how many days do you spend on them?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="9" tabindex="0">
+  <div class="nhead"><span class="num">9</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 3h16l9 9v23a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#4285F4"/><path d="M25 3v9h9z" fill="#A1C2FA"/><path d="M12 20h16M12 25h16M12 30h10" stroke="#ffffff" stroke-width="2"/></svg></span></div><span class="actor a-external"><span class="fr">L'auditeur externe</span><span class="en">The external auditor</span></span></div>
+  <h3><span class="fr">L'auditeur reçoit les comptes et les annexes</span><span class="en">The auditor receives the accounts and the schedules</span></h3><p class="desc"><span class="fr">L'auditeur externe travaille sur les comptes définitifs et les annexes. La relation avec l'auditeur est l'une des tâches principales d'Oudit.</span><span class="en">The external auditor works on the final accounts and the schedules. Working with the auditor is one of Oudit's main tasks.</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="10" tabindex="0">
+  <div class="nhead"><span class="num">10</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span></div>
+  <h3><span class="fr">Oudit signe</span><span class="en">Oudit signs</span></h3><p class="desc"><span class="fr">Oudit a la licence pour signer. Sans sa signature, les comptes ne passent pas, même si une partie du travail est faite par l'IA.</span><span class="en">Oudit holds the licence to sign. Without his signature the accounts do not go through, even if part of the work is done by AI.</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<div class="pill end"><span class="fr">Bilan prêt pour les comptes de gestion, ou comptes définitifs signés</span><span class="en">Balance sheet ready for the management accounts, or final accounts signed</span></div><div class="note"><b><span class="fr">Quand</span><span class="en">When</span></b> · <span class="fr">Chaque fin de trimestre, avant les comptes de gestion (processus 1). En fin d'année (30 juin), avant l'audit.</span><span class="en">Every quarter end, before the management accounts (process 1). At year end (30 June), before the audit.</span></div><div class="note"><b><span class="fr">Le rôle d'Oudit</span><span class="en">Oudit's role</span></b> · <span class="fr">Il ne saisit pas les écritures : il revoit, il vérifie que tout est en harmonie, et il signe.</span><span class="en">He does not post the entries: he reviews, he checks that everything is consistent, and he signs.</span></div></div></div>
+  
+  <footer><span class="fr">Sources : entretiens avec Oudit (16 septembre 2026), séances avec Sylvan (13 juillet et 10 novembre 2026), classeurs des comptes de gestion Oxenham et SIP au 30 juin 2026, export Sage du compte de résultat (13 juillet 2026).</span><span class="en">Sources: interviews with Oudit (16 September 2026), sessions with Sylvan (13 July and 10 November 2026), Oxenham and SIP management accounts workbooks at 30 June 2026, Sage income statement export (13 July 2026).</span></footer>
+</div>
+<script>
+(function () {
+  var body = document.body;
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function setLang(l) {
+    body.setAttribute("data-lang", l); document.documentElement.lang = l;
+    document.querySelectorAll("[data-lang-btn]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.langBtn === l)); });
+    set("oudit-lang", l);
+  }
+  document.querySelectorAll("[data-lang-btn]").forEach(function (b) { b.addEventListener("click", function () { setLang(b.dataset.langBtn); }); });
+  setLang(get("oudit-lang") === "en" ? "en" : "fr");
+
+  var timer = null, i = 0;
+  function visibleNodes() {
+    var v = document.querySelector(".flowview:not([hidden])") || document;
+    return Array.prototype.slice.call(v.querySelectorAll(".flow .node"));
+  }
+  function clear() {
+    document.querySelectorAll(".flow .node.active").forEach(function (n) { n.classList.remove("active"); });
+    document.querySelectorAll(".flow .arrow.lit").forEach(function (a) { a.classList.remove("lit"); });
+  }
+  function arrowBefore(n) { var p = n.previousElementSibling; return p && p.classList.contains("arrow") ? p : null; }
+  function light(n) {
+    clear(); if (!n) return;
+    n.classList.add("active"); var a = arrowBefore(n); if (a) a.classList.add("lit");
+  }
+  function play() {
+    if (timer) clearInterval(timer);
+    var list = visibleNodes(); i = 0; light(list[0]);
+    timer = setInterval(function () {
+      i++; if (i >= list.length) { clearInterval(timer); timer = null; setTimeout(function () { if (!timer) clear(); }, 1600); return; }
+      light(list[i]);
+    }, 1700);
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } clear(); }
+  document.querySelectorAll(".flow .node").forEach(function (n) {
+    n.addEventListener("mouseenter", function () { if (!timer) light(n); });
+    n.addEventListener("focus", function () { if (!timer) light(n); });
+    n.addEventListener("mouseleave", function () { if (!timer) clear(); });
+  });
+
+  // "Today / With Claude" switch, only when the page has a Claude view
+  var hasClaudeView = !!document.querySelector('[data-view="claude"]');
+  function setMode(m, replay) {
+    var on = m !== "today";
+    body.classList.toggle("mode-claude", on);
+    document.querySelectorAll("[data-view]").forEach(function (v) { v.hidden = v.dataset.view !== m; });
+    document.querySelectorAll("[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === m)); });
+    try { history.replaceState(null, "", on ? "#" + m : location.pathname + location.search); } catch (e) {}
+    if (replay) { stop(); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(play, 300); }
+  }
+  if (hasClaudeView) {
+    document.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.addEventListener("click", function () { if (b.getAttribute("aria-pressed") !== "true") setMode(b.dataset.mode, true); });
+    });
+    var start = location.hash.slice(1);
+    setMode(document.querySelector('[data-mode="' + start + '"]') ? start : "today", false);
+  }
+
+  document.querySelectorAll(".qbtn").forEach(function (b) {
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var box = b.closest(".node").querySelector(".qbox");
+      var open = b.getAttribute("aria-expanded") !== "true";
+      b.setAttribute("aria-expanded", String(open)); box.hidden = !open;
+    });
+  });
+
+  document.querySelectorAll(".copy").forEach(function (b) {
+    var label = b.innerHTML;
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      // a bilingual prompt has one <pre> per language: copy the one shown
+      var pres = Array.prototype.slice.call(b.closest(".prompt").querySelectorAll("pre"));
+      var pre = pres.filter(function (p) { return p.offsetParent !== null; })[0] || pres[0];
+      function done() {
+        b.innerHTML = '<span class="fr">Copié</span><span class="en">Copied</span>';
+        setTimeout(function () { b.innerHTML = label; }, 1500);
+      }
+      function fallback() {
+        try {
+          var r = document.createRange(); r.selectNodeContents(pre);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          if (document.execCommand("copy")) done();
+        } catch (err) {}
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pre.innerText).then(done, fallback);
+      else fallback();
+    });
+  });
+  document.querySelectorAll("a[data-pop]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      var w = Math.min(1100, screen.availWidth - 80), h = Math.min(820, screen.availHeight - 80);
+      var x = Math.round((screen.availWidth - w) / 2), y = Math.round((screen.availHeight - h) / 2);
+      var win = null;
+      try { win = window.open(a.dataset.pop, "wf-doc", "popup=yes,width=" + w + ",height=" + h + ",left=" + x + ",top=" + y); } catch (err) { win = null; }
+      if (win) { e.preventDefault(); try { win.focus(); } catch (err) {} }
+    });
+  });
+  if (location.protocol === "file:") {
+    document.querySelectorAll("a[data-local]").forEach(function (a) {
+      a.href = encodeURI(a.dataset.local); a.removeAttribute("target");
+    });
+    var files = {};
+    document.querySelectorAll('a[href*="claude.ai/artifact/"]').forEach(function (a) {
+      var id = a.getAttribute("href").split("/").pop();
+      if (files[id]) { a.href = encodeURI(files[id]); a.removeAttribute("target"); }
+    });
+  }
+  var bar = document.getElementById("bar");
+  function edge() { bar.classList.toggle("scrolled", window.scrollY > 4); }
+  window.addEventListener("scroll", edge, { passive: true }); edge();
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) setTimeout(play, 600);
+})();
+</script>

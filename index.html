@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Oudit · Comptes de gestion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: vertical flowchart on a dotted canvas, a tool legend above, a document shelf below */
+:root {
+  --bg: #ffffff; --soft: #f5f7fb; --surface: #ffffff; --fg: #18202c; --muted: #5a6577; --line: #d7dde8;
+  --accent: #1f5fd1; --accent-soft: #e6eefc; --claude: #c2571a; --claude-soft: #fbeee5;
+  --final: #1c7c43; --final-soft: #e5f4ea; --todo: #a35a00; --todo-soft: #fff3e0;
+  color-scheme: light;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15.5px; line-height: 1.55; }
+body:not([data-lang="en"]) .en, body[data-lang="en"] .fr { display: none; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 0 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.25; text-wrap: balance; margin: 0; }
+/* Header: translucent bar with process tabs, then a quiet title block */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(255, 255, 255, .78);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); transition: box-shadow .25s ease; }
+.bar.scrolled { box-shadow: 0 1px 0 var(--line), 0 8px 18px -14px rgba(16, 24, 40, .35); }
+.bar-in { max-width: 980px; margin: 0 auto; padding-block: 10px; display: flex; align-items: center; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: -0.005em; white-space: nowrap; }
+.brand .dim { color: var(--muted); font-weight: 500; }
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--soft); border-radius: 10px; margin-inline: auto; min-width: 0; }
+.tabs a, .tabs .cur { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 500;
+  color: var(--muted); text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
+.tabs a:hover { color: var(--fg); }
+.tabs a:active { transform: scale(.97); }
+.tabs .cur { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 24, 40, .1), 0 0 0 .5px rgba(16, 24, 40, .08); }
+.tabs .tn { font-variant-numeric: tabular-nums; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  background: var(--line); color: var(--muted); }
+.tabs .cur .tn { background: var(--accent); color: #ffffff; }
+.tools { display: flex; align-items: center; gap: 4px; }
+.seg { display: inline-flex; padding: 2px; background: var(--soft); border-radius: 8px; }
+.seg button { font: inherit; font-size: 12.5px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 4px 9px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+.icon-btn { font: inherit; font-size: 13.5px; font-weight: 500; border: 0; background: none; color: var(--accent); padding: 6px 10px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: background .15s; }
+.icon-btn:hover { background: var(--soft); }
+.icon-btn:active, .seg button:active { transform: scale(.97); transition: transform .1s ease-out; }
+.icon-btn svg { width: 14px; height: 14px; }
+.icon-btn[aria-pressed="true"] { color: var(--claude); background: var(--claude-soft); }
+button:focus-visible, .node:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hero { padding-top: 44px; }
+.kicker { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.08; letter-spacing: -0.022em; font-weight: 700; margin-top: 10px; max-width: 20ch; }
+.lede { color: var(--muted); margin: 14px 0 0; max-width: 60ch; font-size: 17px; line-height: 1.5; }
+.facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 28px 0 0; }
+.facts div { min-width: 0; }
+.facts dt { font-size: 12.5px; color: var(--muted); }
+.facts dd { margin: 2px 0 0; font-family: var(--display); font-size: 28px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tools-used { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.tools-used .tu-label { font-weight: 600; color: var(--fg); }
+.tool { display: inline-flex; align-items: center; gap: 7px; }
+.tool svg { width: 20px; height: 20px; display: block; }
+@media (max-width: 760px) {
+  .bar-in { flex-wrap: wrap; row-gap: 8px; }
+  .tabs { order: 3; width: 100%; margin-inline: 0; }
+  .tabs a, .tabs .cur { flex: 1; justify-content: center; padding-inline: 8px; }
+  .tools { margin-left: auto; }
+}
+@media (max-width: 520px) {
+  .icon-btn .lbl { display: none; }
+  /* process tabs and view switch: equal columns whose labels wrap, so nothing runs off the screen */
+  .tabs a, .tabs .cur { flex: 1 1 0; min-width: 0; font-size: 12px; white-space: normal; text-align: center; line-height: 1.2; gap: 5px; padding: 6px 5px; }
+  .tabs .tn { flex: none; }
+}
+@media (prefers-reduced-transparency: reduce) { .bar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Flow */
+.flow { display: flex; flex-direction: column; align-items: center; margin-top: 40px; }
+.pill { font-family: var(--display); font-weight: 600; font-size: 14px; padding: 8px 22px; border-radius: 999px; }
+.pill.start { background: var(--accent); color: #ffffff; }
+.pill.end { background: var(--final-soft); color: var(--final); border: 1.5px solid var(--final); }
+.arrow { display: flex; flex-direction: column; align-items: center; color: var(--line); height: 46px; }
+.arrow .shaft { width: 3px; flex: 1; border-radius: 3px;
+  background: repeating-linear-gradient(to bottom, var(--accent) 0 6px, transparent 6px 12px); background-size: 3px 12px;
+  animation: flow 0.9s linear infinite; opacity: .35; }
+.arrow svg { width: 16px; height: 10px; color: var(--accent); opacity: .5; }
+.arrow.lit .shaft { opacity: 1; } .arrow.lit svg { opacity: 1; }
+@keyframes flow { from { background-position: 0 0; } to { background-position: 0 12px; } }
+.node { position: relative; width: min(680px, 100%); background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 16px 18px;
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+.node.is-check { border-style: dashed; }
+.node.active { border-color: var(--accent); transform: translateY(-2px) scale(1.012); box-shadow: 0 10px 28px -12px var(--accent); }
+.nhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.num { font-family: var(--display); font-weight: 700; font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); flex: none; }
+.node.active .num { background: var(--accent); color: #ffffff; }
+.icons { display: flex; gap: 6px; }
+.ico svg { width: 34px; height: 34px; display: block; }
+.actor { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.a-colleague { background: var(--todo-soft); color: var(--todo); }
+.a-partner { background: var(--final-soft); color: var(--final); }
+.a-system, .a-external { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+.claude { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--claude); background: var(--claude-soft); padding: 3px 10px; border-radius: 999px; }
+.claude svg { width: 13px; height: 13px; }
+.node h3 { font-size: 17.5px; margin: 12px 0 4px; }
+.desc { margin: 0; color: var(--fg); max-width: 64ch; }
+.ex { margin: 8px 0 0; font-size: 14px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+.todo { margin: 8px 0 0; font-size: 13.5px; color: var(--todo); background: var(--todo-soft); padding: 6px 10px; border-radius: 8px; }
+.docs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.doc { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; text-decoration: none; color: var(--fg); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px 5px 6px; font-size: 13.5px; font-weight: 500; transition: border-color .2s, transform .2s; }
+.doc:hover { border-color: var(--accent); transform: translateY(-1px); }
+.doc .dicon svg { width: 22px; height: 22px; display: block; }
+.doc .dname { overflow-wrap: anywhere; }
+.doc > svg { width: 12px; height: 12px; color: var(--muted); flex: none; }
+.doc.final { border-color: var(--final); background: var(--final-soft); }
+.flag { font-size: 11px; font-weight: 700; color: var(--final); text-transform: uppercase; letter-spacing: .06em; }
+.split { width: min(520px, 80%); height: 3px; position: relative; }
+.split span { position: absolute; inset: 0; border-top: 3px dashed var(--accent); opacity: .45; }
+.branches { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: min(900px, 100%); }
+.branch { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.branch .node { width: 100%; }
+.side { margin-top: 26px; width: min(680px, 100%); }
+.note { width: min(680px, 100%); margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 14.5px; }
+.note b { font-family: var(--display); }
+.qlist { margin: 10px 0 0; padding-left: 20px; } .qlist li { margin: 6px 0; }
+.qbtn { margin-left: auto; font: inherit; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #f2c48d;
+  background: var(--todo-soft); color: var(--todo); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.qbtn svg { width: 14px; height: 14px; }
+.qbtn:hover { border-color: var(--todo); }
+.qbtn:active { transform: scale(.97); }
+.qbtn[aria-expanded="true"] { background: var(--todo); color: #ffffff; border-color: var(--todo); }
+.qbox { margin-top: 12px; background: var(--todo-soft); border: 1px solid #f2c48d; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.qbox b { color: var(--todo); font-size: 12.5px; }
+.qbox ul { margin: 4px 0 0; padding-left: 18px; } .qbox li { margin: 5px 0; }
+@media (max-width: 720px) { .branches { grid-template-columns: 1fr; } .split { display: none; } }
+
+/* Shelf */
+h2 { font-size: 20px; margin: 48px 0 6px; }
+.shelf-intro { color: var(--muted); margin: 0 0 14px; font-size: 14.5px; }
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.card { display: flex; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; transition: border-color .2s, transform .2s; min-width: 0; }
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card svg { width: 34px; height: 34px; flex: none; }
+.card div { min-width: 0; }
+.card b { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.card span.sub { font-size: 13px; color: var(--muted); }
+.card.final { border-color: var(--final); background: var(--final-soft); }
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .arrow .shaft { animation: none; } .node, .doc, .card { transition: none; } .node.active { transform: none; } }
+
+/* "With Claude" view: same page, the flow is swapped and the accent turns orange */
+[data-view][hidden] { display: none !important; }
+body.mode-claude { --accent: #c2571a; --accent-soft: #fbeee5; }
+.mode-switch { display: inline-flex; flex-wrap: wrap; max-width: 100%; padding: 3px; background: var(--soft); border-radius: 10px; margin-bottom: 18px; }
+.mode-switch button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 7px 16px; border-radius: 8px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.mode-switch button svg { width: 14px; height: 14px; }
+.mode-switch button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(16, 24, 40, .12), 0 0 0 .5px rgba(16, 24, 40, .08); }
+.mode-switch button[data-mode="claude"][aria-pressed="true"], .mode-switch button[data-mode="build"][aria-pressed="true"] { color: var(--claude); }
+.mode-switch button:active { transform: scale(.97); }
+.flowview[data-view="claude"] .node { width: min(760px, 100%); }
+.a-claude { background: var(--claude); color: #ffffff; }
+.uses { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.use { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--claude-soft); color: var(--claude); }
+.manual-tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); color: var(--muted); }
+.node.is-manual { background: var(--soft); }
+.replaces { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.how { margin: 10px 0 0; padding-left: 20px; font-size: 14.5px; }
+.how li { margin: 3px 0; }
+.prompt { margin-top: 12px; border: 1px solid #f0cdb5; background: #fffaf6; border-radius: 10px; overflow: hidden; }
+.prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 6px 5px 12px; border-bottom: 1px solid #f0cdb5;
+  font-size: 12px; font-weight: 700; color: var(--claude); letter-spacing: .02em; }
+.copy { font: inherit; font-size: 12.5px; font-weight: 600; border: 1px solid #f0cdb5; background: #ffffff; color: var(--claude); border-radius: 7px; padding: 3px 10px; cursor: pointer; }
+.copy:hover { background: var(--claude-soft); }
+.copy:active { transform: scale(.97); }
+.pwhy { margin: 0; padding: 9px 12px; font-size: 14px; line-height: 1.5; color: var(--fg); border-bottom: 1px dashed #f0cdb5; background: #ffffff; }
+.prompt pre { margin: 0; padding: 10px 12px; font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 13px; line-height: 1.55;
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg); }
+.result { margin: 10px 0 0; font-size: 14px; color: var(--final); background: var(--final-soft); padding: 6px 10px; border-radius: 8px; }
+.options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.opt { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; min-width: 0; background: var(--surface); }
+.opt b { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 4px; }
+.opt b svg { width: 24px; height: 24px; flex: none; }
+.opt code { display: block; margin-top: 8px; font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 12.5px; background: #fffaf6;
+  border: 1px dashed #f0cdb5; padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 720px) { .options { grid-template-columns: 1fr; } }
+/* phones: the view switch becomes equal columns whose labels wrap (kept last so it wins over the rules above) */
+@media (max-width: 520px) {
+  .mode-switch { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); width: 100%; }
+  .mode-switch button { white-space: normal; justify-content: center; text-align: center; line-height: 1.2; font-size: 12.5px; padding: 7px 6px; gap: 5px; }
+  .mode-switch button svg { flex: none; }
+  .hero { padding-top: 24px; }
+  .facts { gap: 12px 28px; }
+  .prompt pre { font-size: 12.5px; }
+}
+
+/* colour code of a step */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 2px; font-size: 13px; color: var(--fg); }
+.legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.legend .lg i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.18); display: inline-block; }
+</style>
+<header class="bar" id="bar">
+  <div class="bar-in">
+    <span class="brand">Oxenham <span class="dim">· <span class="fr">Comptabilité</span><span class="en">Accounting</span></span></span>
+    <nav class="tabs" aria-label="Processus"><span class="cur" aria-current="page"><span class="tn">1</span><span class="fr">Comptes de gestion</span><span class="en">Management accounts</span></span><a href="controles-et-audit.html" data-local="controles-et-audit.html"><span class="tn">2</span><span class="fr">Contrôles et audit</span><span class="en">Checks and audit</span></a><a href="declaration-tva.html" data-local="declaration-tva.html"><span class="tn">3</span><span class="fr">Déclaration TVA</span><span class="en">VAT return</span></a></nav>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Langue / Language">
+        <button type="button" data-lang-btn="fr" aria-pressed="true">FR</button><button type="button" data-lang-btn="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <section class="hero">
+    <p class="kicker"><span class="fr">Processus 1 sur 3 · Ce que Oudit fait aujourd'hui</span><span class="en">Process 1 of 3 · What Oudit does today</span></p>
+    <h1><span class="fr">Préparer les comptes de gestion trimestriels</span><span class="en">Prepare the quarterly management accounts</span></h1>
+    <p class="lede"><span class="fr">Tous les 3 mois, Oudit et Sylvan transforment l'export de Sage en comptes de gestion pour le conseil d'administration, société par société. Il faut au moins 5 jours.</span><span class="en">Every 3 months, Oudit and Sylvan turn the Sage export into management accounts for the board, company by company. It takes at least 5 days.</span></p>
+    <dl class="facts"><div><dt><span class="fr">Étapes</span><span class="en">Steps</span></dt><dd>10</dd></div><div><dt><span class="fr">Intervenants</span><span class="en">People involved</span></dt><dd>3</dd></div><div><dt><span class="fr">Questions ouvertes</span><span class="en">Open questions</span></dt><dd>10</dd></div></dl>
+    <div class="tools-used"><span class="tu-label"><span class="fr">Outils</span><span class="en">Tools</span></span><span class="tool"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg>Pastel / Sage</span><span class="tool"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg>Excel</span></div>
+  </section>
+  <div class="flowview"><div class="flow"><div class="pill start"><span class="fr">Départ</span><span class="en">Start</span></div>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="1" tabindex="0">
+  <div class="nhead"><span class="num">1</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Sortir le compte de résultat et le bilan de Pastel</span><span class="en">Run the income statement and the balance sheet in Pastel</span></h3><p class="desc"><span class="fr">Dans Pastel : Reports, General Ledger, Trial Balance pour la période, puis Report, General Ledger, Balance Sheet. Pour Oudit, c'est le document source : tout le reste en découle. L'exercice va du 1er juillet au 30 juin.</span><span class="en">In Pastel: Reports, General Ledger, Trial Balance for the period, then Report, General Ledger, Balance Sheet. For Oudit this is the source document: everything else comes from it. The financial year runs from 1 July to 30 June.</span></p><p class="ex"><span class="fr">Exemple : pour les comptes au 30 juin 2026, la période va de juillet 2025 à juin 2026. L'export compte 441 comptes.</span><span class="en">Example: for the accounts at 30 June 2026, the period runs from July 2025 to June 2026. The export has 441 accounts.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Sortez-vous l'export de Pastel en Excel directement, ou l'imprimez-vous d'abord ?</span><span class="en">Do you export straight from Pastel to Excel, or print it first?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="2" tabindex="0">
+  <div class="nhead"><span class="num">2</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">2 questions</span><span class="en">2 questions</span></span></button></div>
+  <h3><span class="fr">Coller l'export dans le classeur</span><span class="en">Paste the export into the workbook</span></h3><p class="desc"><span class="fr">Il colle l'export dans une feuille du classeur. Dans le classeur au 30 juin 2026, c'est la feuille « JUNE 24 ». La feuille « Segmented General Ledger Income » va chercher chaque compte par son libellé avec une RECHERCHEV et ramène le montant.</span><span class="en">He pastes the export into a sheet of the workbook. In the workbook at 30 June 2026, it is the sheet "JUNE 24". The sheet "Segmented General Ledger Income" looks up each account by its name with a VLOOKUP and brings back the amount.</span></p><div class="legend"><span class="lg"><i style="background:#E8710A"></i><span class="fr">point faible : un compte créé dans Sage n'est pas dans la liste, et plus rien ne s'équilibre</span><span class="en">weak spot: an account created in Sage is not in the list, so nothing balances</span></span></div><p class="ex"><span class="fr">Exemple : la ligne 7004/LOCA (ventes local non alcoolisées) cherche son montant dans la colonne E de la feuille « JUNE 24 ».</span><span class="en">Example: the line 7004/LOCA (local non-alcoholic sales) looks up its amount in column E of the sheet "JUNE 24".</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">La feuille s'appelle « JUNE 24 » dans le classeur de juin 2026. Réutilisez-vous la même feuille chaque trimestre, ou en créez-vous une nouvelle ?</span><span class="en">The sheet is called "JUNE 24" in the June 2026 workbook. Do you reuse the same sheet every quarter, or create a new one?</span></li><li class="qi"><span class="fr">Quand Sage crée un nouveau compte, il n'est pas dans la liste de « Segmented General Ledger Income ». Comment le repérez-vous aujourd'hui, et combien de temps cela prend-il ?</span><span class="en">When Sage creates a new account, it is not in the list of "Segmented General Ledger Income". How do you spot it today, and how long does it take?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="3" tabindex="0">
+  <div class="nhead"><span class="num">3</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#0E7C86"/><rect x="10" y="7" width="20" height="26" rx="3" fill="#ffffff"/><rect x="13" y="10" width="14" height="6" rx="1" fill="#0E7C86"/><g fill="#0E7C86"><circle cx="15" cy="21" r="1.6"/><circle cx="20" cy="21" r="1.6"/><circle cx="25" cy="21" r="1.6"/><circle cx="15" cy="27" r="1.6"/><circle cx="20" cy="27" r="1.6"/><circle cx="25" cy="27" r="1.6"/></g></svg></span></div><span class="actor a-system"><span class="fr">Les formules Excel</span><span class="en">The Excel formulas</span></span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Les formules répartissent les charges entre les activités</span><span class="en">The formulas split the costs between the business lines</span></h3><p class="desc"><span class="fr">La feuille « Lookup » classe chaque compte dans une catégorie (ADMIN, ADMIN FAB, ADMIN MEB...). La feuille « APPORTIONED » additionne chaque catégorie, ajoute les ajustements, puis répartit le total entre Local, Importé, Admix et Bière.</span><span class="en">The sheet "Lookup" puts each account in a category (ADMIN, ADMIN FAB, ADMIN MEB...). The sheet "APPORTIONED" adds up each category, adds the adjustments, then splits the total between Local, Imported, Admix and Beer.</span></p><p class="ex"><span class="fr">Exemple : la ligne ADMIN additionne tous les comptes classés ADMIN dans « Lookup ». La part du local est le total moins la part de l'importé.</span><span class="en">Example: the ADMIN line adds up every account classed ADMIN in "Lookup". The local share is the total minus the imported share.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Qui a fixé la répartition entre Local, Importé, Admix et Bière dans « APPORTIONED », et quand a-t-elle été revue pour la dernière fois ?</span><span class="en">Who set the split between Local, Imported, Admix and Beer in "APPORTIONED", and when was it last reviewed?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="4" tabindex="0">
+  <div class="nhead"><span class="num">4</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#8A5A2B"/><path d="M6 17l14-8 14 8v15H6z" fill="#F3E3CC"/><rect x="13" y="20" width="14" height="12" fill="#8A5A2B"/><path d="M13 24h14M13 28h14" stroke="#F3E3CC" stroke-width="1.4"/></svg></span></div><span class="actor a-system"><span class="fr">Les formules Excel</span><span class="en">The Excel formulas</span></span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Le compte de fabrication et les 5 activités</span><span class="en">The manufacturing account and the 5 business lines</span></h3><p class="desc"><span class="fr">Les formules construisent le compte de fabrication (« App II. Manufacturing ») et l'importé (« App III. Imported ») à partir des volumes de « App IV. ANALYTICS », en litres de cette année et de l'an dernier. Ensuite, une feuille par activité : Local, Bière, Importé, Admix, Jus. Tout se regroupe dans le compte de résultat, la feuille « 3.SCI ».</span><span class="en">The formulas build the manufacturing account ("App II. Manufacturing") and the imported account ("App III. Imported") from the volumes in "App IV. ANALYTICS", in litres for this year and last year. Then one sheet per business line: Local, Beer, Imported, Admix, Juice. Everything comes together in the income statement, the sheet "3.SCI".</span></p><p class="ex"><span class="fr">Exemple : Oudit appelle « App IV. ANALYTICS » la base de tout. Il trouve ce classeur complexe et répétitif, et dit s'y perdre parfois lui-même.</span><span class="en">Example: Oudit calls "App IV. ANALYTICS" the base of everything. He finds the workbook complex and repetitive, and says he sometimes gets lost in it himself.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Dans « App IV. ANALYTICS », certains coûts sont tapés directement dans les formules (par exemple en S3, T3 et U3). D'où viennent ces montants, et qui les met à jour ?</span><span class="en">In "App IV. ANALYTICS", some costs are typed straight into the formulas (for example in S3, T3 and U3). Where do these amounts come from, and who updates them?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="5" tabindex="0">
+  <div class="nhead"><span class="num">5</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">2 questions</span><span class="en">2 questions</span></span></button></div>
+  <h3><span class="fr">Taper les chiffres de l'an dernier</span><span class="en">Type in last year's figures</span></h3><p class="desc"><span class="fr">Les comparatifs de l'an dernier ne sont pas automatiques : Oudit les tape à la main. C'est le point faible qu'il cite lui-même.</span><span class="en">Last year's comparative figures are not automatic: Oudit types them in by hand. This is the weak spot he names himself.</span></p><div class="legend"><span class="lg"><i style="background:#E8710A"></i><span class="fr">saisie à la main</span><span class="en">typed by hand</span></span></div><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Où prenez-vous les chiffres de l'an dernier : dans le classeur de l'an dernier, ou dans Sage ?</span><span class="en">Where do you take last year's figures from: last year's workbook, or Sage?</span></li><li class="qi"><span class="fr">Combien de temps vous prennent les comparatifs, à chaque trimestre ?</span><span class="en">How long do the comparatives take you each quarter?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="6" tabindex="0">
+  <div class="nhead"><span class="num">6</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#2E7D32"/><path d="M11 9h15a3 3 0 0 1 3 3v19H14a3 3 0 0 1-3-3z" fill="#ffffff"/><path d="M14 9v19" stroke="#2E7D32" stroke-width="1.6"/><path d="M17 15h8M17 19h8M17 23h6" stroke="#2E7D32" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span></div><span class="actor a-main">Oudit</span></div>
+  <h3><span class="fr">Le bilan et le tableau des flux de trésorerie</span><span class="en">The balance sheet and the cash flow statement</span></h3><p class="desc"><span class="fr">Il reporte le bilan extrait de Pastel dans la feuille « 2.SFP ». Le tableau des flux de trésorerie se construit avec la différence entre le bilan de cette année et celui de l'an dernier. Pour Oudit, c'est l'état le plus important : il montre si l'entreprise génère de la trésorerie.</span><span class="en">He carries the balance sheet from Pastel into the sheet "2.SFP". The cash flow statement is built from the difference between this year's and last year's balance sheet. For Oudit it is the most important statement: it shows whether the business generates cash.</span></p><p class="ex"><span class="fr">Exemple : les chiffres du bilan doivent d'abord avoir été contrôlés (processus 2, « Contrôles et audit »).</span><span class="en">Example: the balance sheet figures must first have been checked (process 2, "Checks and audit").</span></p>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="7" tabindex="0">
+  <div class="nhead"><span class="num">7</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#107C41"/><rect x="20" y="9" width="13" height="22" rx="2" fill="#33C481"/><path d="M22 15h9M22 20h9M22 25h9" stroke="#107C41" stroke-width="1.4"/><rect x="6" y="10" width="16" height="20" rx="3" fill="#0B5A2F"/><path d="M10 15l8 10M18 15l-8 10" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 3h16l9 9v23a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#4285F4"/><path d="M25 3v9h9z" fill="#A1C2FA"/><path d="M12 20h16M12 25h16M12 30h10" stroke="#ffffff" stroke-width="2"/></svg></span></div><span class="actor a-main">Oudit</span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Les notes et le registre des baux</span><span class="en">The notes and the lease register</span></h3><p class="desc"><span class="fr">Les notes : base de préparation, méthodes comptables (« 7.Apolicies »), immobilisations, clients, fournisseurs, baux, intérêts d'affacturage, ratio d'endettement. Le registre des baux (feuille « LEASE 30 JUNE 2024 ») : chaque nouveau bail y est ajouté, et chaque dette de bail est séparée entre la part à payer dans l'année et la part à plus d'un an. Oudit est le seul à le tenir.</span><span class="en">The notes: basis of preparation, accounting policies ("7.Apolicies"), fixed assets, customers, suppliers, leases, factoring interest, gearing ratio. The lease register (sheet "LEASE 30 JUNE 2024"): every new lease is added, and each lease debt is split between the part due within a year and the part due later. Oudit is the only one who keeps it.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">La feuille des baux s'appelle « LEASE 30 JUNE 2024 ». Est-elle à jour au 30 juin 2026, ou les nouveaux baux sont-ils ailleurs ?</span><span class="en">The lease sheet is called "LEASE 30 JUNE 2024". Is it up to date at 30 June 2026, or are the new leases somewhere else?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="8" tabindex="0">
+  <div class="nhead"><span class="num">8</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#0E7C86"/><rect x="10" y="7" width="20" height="26" rx="3" fill="#ffffff"/><rect x="13" y="10" width="14" height="6" rx="1" fill="#0E7C86"/><g fill="#0E7C86"><circle cx="15" cy="21" r="1.6"/><circle cx="20" cy="21" r="1.6"/><circle cx="25" cy="21" r="1.6"/><circle cx="15" cy="27" r="1.6"/><circle cx="20" cy="27" r="1.6"/><circle cx="25" cy="27" r="1.6"/></g></svg></span></div><span class="actor a-main">Oudit</span></div>
+  <h3><span class="fr">Vérifier que tout concorde</span><span class="en">Check that everything agrees</span></h3><p class="desc"><span class="fr">Le compte de résultat du classeur doit être égal à celui de Sage, le bilan doit s'équilibrer, et chaque chiffre doit être rapproché. C'est Oudit qui clôture le bilan.</span><span class="en">The income statement in the workbook must equal the one in Sage, the balance sheet must balance, and every figure must be reconciled. Oudit is the one who closes the balance sheet.</span></p><div class="legend"><span class="lg"><i style="background:#1E8E3E"></i><span class="fr">concorde avec Sage</span><span class="en">agrees with Sage</span></span><span class="lg"><i style="background:#D93025"></i><span class="fr">écart à trouver</span><span class="en">difference to find</span></span></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node is-check" data-step="9" tabindex="0">
+  <div class="nhead"><span class="num">9</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="#6B4FBB"/><circle cx="18" cy="18" r="8" fill="none" stroke="#ffffff" stroke-width="2.6"/><path d="M24 24l7 7" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><path d="M14.5 18l2.5 2.5 4.5-5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg></span></div><span class="actor a-colleague"><span class="fr">Sylvan (directeur financier)</span><span class="en">Sylvan (CFO)</span></span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Sylvan revoit le détail</span><span class="en">Sylvan reviews the detail</span></h3><p class="desc"><span class="fr">Sylvan prépare les comptes de gestion avec Oudit. Il connaît très bien les comptes de fabrication et revoit le détail, par exemple les comptes entre SIP et Oxenham.</span><span class="en">Sylvan prepares the management accounts with Oudit. He knows the manufacturing accounts very well and reviews the detail, for example the accounts between SIP and Oxenham.</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Qui fait quoi entre vous et Sylvan : qui remplit le classeur, et qui relit ?</span><span class="en">Who does what between you and Sylvan: who fills in the workbook, and who reviews it?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<article class="node" data-step="10" tabindex="0">
+  <div class="nhead"><span class="num">10</span><div class="icons"><span class="ico"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 3h16l9 9v23a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#4285F4"/><path d="M25 3v9h9z" fill="#A1C2FA"/><path d="M12 20h16M12 25h16M12 30h10" stroke="#ffffff" stroke-width="2"/></svg></span></div><span class="actor a-external"><span class="fr">Le conseil d'administration</span><span class="en">The board of directors</span></span><button type="button" class="qbtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><span class="fr">Question</span><span class="en">Question</span></span></button></div>
+  <h3><span class="fr">Présenter les comptes au conseil d'administration</span><span class="en">Present the accounts to the board</span></h3><p class="desc"><span class="fr">Les comptes servent aux décisions : les dépenses restent-elles dans le budget, les objectifs de chiffre d'affaires sont-ils atteints ?</span><span class="en">The accounts are used for decisions: are expenses within budget, are revenue targets being met?</span></p><div class="qbox" hidden><b><span class="fr">À demander</span><span class="en">To ask</span></b><ul><li class="qi"><span class="fr">Qui présente les comptes au conseil : vous, Sylvan, ou les deux ?</span><span class="en">Who presents the accounts to the board: you, Sylvan, or both?</span></li></ul></div>
+</article>
+<div class="arrow" aria-hidden="true"><span class="shaft"></span><svg viewBox="0 0 16 10"><path d="M1 1l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<div class="pill end"><span class="fr">Comptes de gestion remis au conseil</span><span class="en">Management accounts handed to the board</span></div><div class="note"><b><span class="fr">Combien de fois</span><span class="en">How often</span></b> · <span class="fr">4 fois par an pour Oxenham (décembre, mars, juin, septembre), 4 fois pour SIP, et depuis peu pour Thirsty Bistro.</span><span class="en">4 times a year for Oxenham (December, March, June, September), 4 times for SIP, and recently for Thirsty Bistro.</span></div><div class="note"><b>SIP</b> · <span class="fr">Même méthode, avec son propre classeur (51 feuilles). Les activités de SIP sont différentes : Food, Coffee, Juice, Coffeedential et Eau.</span><span class="en">Same method, with its own workbook (51 sheets). SIP's business lines are different: Food, Coffee, Juice, Coffeedential and Water.</span></div><div class="note"><b><span class="fr">Ce qui prend du temps</span><span class="en">What takes time</span></b> · <span class="fr">Au moins 5 jours par trimestre. Un classeur ancien et répétitif (103 feuilles, dont beaucoup cachées), les comparatifs tapés à la main, les nouveaux comptes de Sage à retrouver. Le souhait d'Oudit : simplifier le classeur sans toucher aux chiffres.</span><span class="en">At least 5 days a quarter. An old, repetitive workbook (103 sheets, many of them hidden), comparatives typed by hand, new Sage accounts to track down. Oudit's wish: simplify the workbook without touching the figures.</span></div><div class="note"><b><span class="fr">L'analyse</span><span class="en">Analysis</span></b> · <span class="fr">Oudit voit le plus de potentiel dans l'analyse : budget, comparaisons, tendances, aide à la décision.</span><span class="en">Oudit sees the most potential in analysis: budget, comparisons, trends, decision support.</span></div></div></div>
+  
+  <footer><span class="fr">Sources : entretiens avec Oudit (16 septembre 2026), séances avec Sylvan (13 juillet et 10 novembre 2026), classeurs des comptes de gestion Oxenham et SIP au 30 juin 2026, export Sage du compte de résultat (13 juillet 2026).</span><span class="en">Sources: interviews with Oudit (16 September 2026), sessions with Sylvan (13 July and 10 November 2026), Oxenham and SIP management accounts workbooks at 30 June 2026, Sage income statement export (13 July 2026).</span></footer>
+</div>
+<script>
+(function () {
+  var body = document.body;
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function setLang(l) {
+    body.setAttribute("data-lang", l); document.documentElement.lang = l;
+    document.querySelectorAll("[data-lang-btn]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.langBtn === l)); });
+    set("oudit-lang", l);
+  }
+  document.querySelectorAll("[data-lang-btn]").forEach(function (b) { b.addEventListener("click", function () { setLang(b.dataset.langBtn); }); });
+  setLang(get("oudit-lang") === "en" ? "en" : "fr");
+
+  var timer = null, i = 0;
+  function visibleNodes() {
+    var v = document.querySelector(".flowview:not([hidden])") || document;
+    return Array.prototype.slice.call(v.querySelectorAll(".flow .node"));
+  }
+  function clear() {
+    document.querySelectorAll(".flow .node.active").forEach(function (n) { n.classList.remove("active"); });
+    document.querySelectorAll(".flow .arrow.lit").forEach(function (a) { a.classList.remove("lit"); });
+  }
+  function arrowBefore(n) { var p = n.previousElementSibling; return p && p.classList.contains("arrow") ? p : null; }
+  function light(n) {
+    clear(); if (!n) return;
+    n.classList.add("active"); var a = arrowBefore(n); if (a) a.classList.add("lit");
+  }
+  function play() {
+    if (timer) clearInterval(timer);
+    var list = visibleNodes(); i = 0; light(list[0]);
+    timer = setInterval(function () {
+      i++; if (i >= list.length) { clearInterval(timer); timer = null; setTimeout(function () { if (!timer) clear(); }, 1600); return; }
+      light(list[i]);
+    }, 1700);
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } clear(); }
+  document.querySelectorAll(".flow .node").forEach(function (n) {
+    n.addEventListener("mouseenter", function () { if (!timer) light(n); });
+    n.addEventListener("focus", function () { if (!timer) light(n); });
+    n.addEventListener("mouseleave", function () { if (!timer) clear(); });
+  });
+
+  // "Today / With Claude" switch, only when the page has a Claude view
+  var hasClaudeView = !!document.querySelector('[data-view="claude"]');
+  function setMode(m, replay) {
+    var on = m !== "today";
+    body.classList.toggle("mode-claude", on);
+    document.querySelectorAll("[data-view]").forEach(function (v) { v.hidden = v.dataset.view !== m; });
+    document.querySelectorAll("[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === m)); });
+    try { history.replaceState(null, "", on ? "#" + m : location.pathname + location.search); } catch (e) {}
+    if (replay) { stop(); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(play, 300); }
+  }
+  if (hasClaudeView) {
+    document.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.addEventListener("click", function () { if (b.getAttribute("aria-pressed") !== "true") setMode(b.dataset.mode, true); });
+    });
+    var start = location.hash.slice(1);
+    setMode(document.querySelector('[data-mode="' + start + '"]') ? start : "today", false);
+  }
+
+  document.querySelectorAll(".qbtn").forEach(function (b) {
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var box = b.closest(".node").querySelector(".qbox");
+      var open = b.getAttribute("aria-expanded") !== "true";
+      b.setAttribute("aria-expanded", String(open)); box.hidden = !open;
+    });
+  });
+
+  document.querySelectorAll(".copy").forEach(function (b) {
+    var label = b.innerHTML;
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      // a bilingual prompt has one <pre> per language: copy the one shown
+      var pres = Array.prototype.slice.call(b.closest(".prompt").querySelectorAll("pre"));
+      var pre = pres.filter(function (p) { return p.offsetParent !== null; })[0] || pres[0];
+      function done() {
+        b.innerHTML = '<span class="fr">Copié</span><span class="en">Copied</span>';
+        setTimeout(function () { b.innerHTML = label; }, 1500);
+      }
+      function fallback() {
+        try {
+          var r = document.createRange(); r.selectNodeContents(pre);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          if (document.execCommand("copy")) done();
+        } catch (err) {}
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pre.innerText).then(done, fallback);
+      else fallback();
+    });
+  });
+  document.querySelectorAll("a[data-pop]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      var w = Math.min(1100, screen.availWidth - 80), h = Math.min(820, screen.availHeight - 80);
+      var x = Math.round((screen.availWidth - w) / 2), y = Math.round((screen.availHeight - h) / 2);
+      var win = null;
+      try { win = window.open(a.dataset.pop, "wf-doc", "popup=yes,width=" + w + ",height=" + h + ",left=" + x + ",top=" + y); } catch (err) { win = null; }
+      if (win) { e.preventDefault(); try { win.focus(); } catch (err) {} }
+    });
+  });
+  if (location.protocol === "file:") {
+    document.querySelectorAll("a[data-local]").forEach(function (a) {
+      a.href = encodeURI(a.dataset.local); a.removeAttribute("target");
+    });
+    var files = {};
+    document.querySelectorAll('a[href*="claude.ai/artifact/"]').forEach(function (a) {
+      var id = a.getAttribute("href").split("/").pop();
+      if (files[id]) { a.href = encodeURI(files[id]); a.removeAttribute("target"); }
+    });
+  }
+  var bar = document.getElementById("bar");
+  function edge() { bar.classList.toggle("scrolled", window.scrollY > 4); }
+  window.addEventListener("scroll", edge, { passive: true }); edge();
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) setTimeout(play, 600);
+})();
+</script>
